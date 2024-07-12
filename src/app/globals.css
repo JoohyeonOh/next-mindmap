@@ -27,6 +27,7 @@
   margin: 10px;
   background-color: white;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .node.selected {
@@ -35,54 +36,83 @@
 }
 
 .node-content {
-  margin-right: 10px;
-  min-width: 100px;
-  min-height: 30px;
   display: flex;
   align-items: center;
+  min-width: 150px;
+  min-height: 30px;
+}
+
+.text-content {
+  margin: 0 10px;
   cursor: text;
 }
 
-.node-buttons {
+.collapse-button,
+.add-child-button,
+.add-sibling-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
   display: flex;
-  margin-top: 5px;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: color 0.3s ease;
 }
 
-.node-buttons button {
-  margin-right: 5px;
-  font-size: 12px;
-  padding: 3px 6px;
+.collapse-button:hover,
+.add-child-button:hover,
+.add-sibling-button:hover {
+  color: #4caf50;
+}
+
+.add-child-button {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  right: 20px;
+  top: 3.5%;
+  transform: translateY(-50%);
+  z-index: 100;
+}
+
+.add-sibling-button {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .children {
   display: flex;
   flex-direction: column;
-  margin-left: 20px;
+  margin-left: 40px;
   position: relative;
+  overflow: hidden;
+  max-height: 1000px; /* 큰 값으로 설정 */
+  transition: max-height 0.5s ease;
 }
 
 .children::before {
   content: "";
   position: absolute;
   top: 0;
-  left: -10px;
+  left: -20px;
   width: 2px;
   height: 100%;
   background-color: #ccc;
 }
 
-button {
-  background-color: #4caf50;
+.children.collapsed {
+  max-height: 0;
+}
+
+input {
   border: none;
-  color: white;
-  padding: 5px 10px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
+  outline: none;
   font-size: 16px;
-  margin: 4px 2px;
-  cursor: pointer;
-  border-radius: 3px;
+  width: 100%;
 }
 
 .zoom-controls {
@@ -94,4 +124,8 @@ button {
 
 .zoom-controls button {
   margin-left: 10px;
+  background-color: #4caf50;
+  padding: 10px 20px;
+  color: white;
+  border-radius: 10px;
 }
