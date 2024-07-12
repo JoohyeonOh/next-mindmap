@@ -19,16 +19,19 @@
 
 .node {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 2px solid #ccc;
   border-radius: 5px;
   margin: 10px;
   background-color: white;
+  transition: all 0.3s ease;
 }
 
-.node.root {
-  margin-left: 0;
+.node.selected {
+  border-color: #4caf50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
 }
 
 .node-content {
@@ -40,17 +43,32 @@
   cursor: text;
 }
 
-.node-content input {
-  border: none;
-  outline: none;
-  font-size: 16px;
-  width: 100%;
+.node-buttons {
+  display: flex;
+  margin-top: 5px;
+}
+
+.node-buttons button {
+  margin-right: 5px;
+  font-size: 12px;
+  padding: 3px 6px;
 }
 
 .children {
   display: flex;
   flex-direction: column;
   margin-left: 20px;
+  position: relative;
+}
+
+.children::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -10px;
+  width: 2px;
+  height: 100%;
+  background-color: #ccc;
 }
 
 button {

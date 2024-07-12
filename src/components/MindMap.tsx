@@ -16,6 +16,7 @@ const MindMap: React.FC = () => {
   });
   const [isPanning, setIsPanning] = useState(false);
   const [editingNode, setEditingNode] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addChild = (parentId: string) => {
@@ -37,6 +38,29 @@ const MindMap: React.FC = () => {
 
     setRootNode(updateNodes(rootNode));
     setEditingNode(newNode.id);
+    setSelectedNode(newNode.id);
+  };
+
+  const addSibling = (siblingId: string) => {
+    const newNode: Node = {
+      id: Math.random().toString(36).substr(2, 9),
+      content: "New Sibling",
+      children: [],
+    };
+
+    const updateNodes = (node: Node): Node => {
+      if (node.children.some((child) => child.id === siblingId)) {
+        return { ...node, children: [...node.children, newNode] };
+      }
+      return {
+        ...node,
+        children: node.children.map(updateNodes),
+      };
+    };
+
+    setRootNode(updateNodes(rootNode));
+    setEditingNode(newNode.id);
+    setSelectedNode(newNode.id);
   };
 
   const updateNodeContent = (nodeId: string, newContent: string) => {
@@ -54,7 +78,16 @@ const MindMap: React.FC = () => {
   };
 
   const renderNode = (node: Node, isRoot: boolean = false) => (
-    <div key={node.id} className={`node ${isRoot ? "root" : ""}`}>
+    <div
+      key={node.id}
+      className={`node ${isRoot ? "root" : ""} ${
+        selectedNode === node.id ? "selected" : ""
+      }`}
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedNode(node.id);
+      }}
+    >
       <div className="node-content" onClick={() => setEditingNode(node.id)}>
         {editingNode === node.id ? (
           <input
@@ -73,7 +106,28 @@ const MindMap: React.FC = () => {
           <span>{node.content}</span>
         )}
       </div>
-      <button onClick={() => addChild(node.id)}>+</button>
+      {selectedNode === node.id && (
+        <div className="node-buttons">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              addChild(node.id);
+            }}
+          >
+            Add Child
+          </button>
+          {!isRoot && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                addSibling(node.id);
+              }}
+            >
+              Add Sibling
+            </button>
+          )}
+        </div>
+      )}
       {node.children.length > 0 && (
         <div className="children">
           {node.children.map((child) => renderNode(child))}
@@ -86,14 +140,12 @@ const MindMap: React.FC = () => {
     if (event.code === "Space") {
       event.preventDefault();
       setIsPanning(true);
-      console.log("space keydown");
     }
   }, []);
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     if (event.code === "Space") {
       setIsPanning(false);
-      console.log("space key up");
     }
   }, []);
 
@@ -132,7 +184,10 @@ const MindMap: React.FC = () => {
               cursor: isPanning ? "grab" : "default",
             }}
           >
-            <div className="mind-map-container">
+            <div
+              className="mind-map-container"
+              onClick={() => setSelectedNode(null)}
+            >
               <div className="mind-map">{renderNode(rootNode, true)}</div>
             </div>
           </TransformComponent>
