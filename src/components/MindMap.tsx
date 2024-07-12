@@ -1,46 +1,42 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import Node from "./Node";
+import ZoomControls from "./ZoomControls";
+import { Node as NodeType } from "../interface/index";
 import {
-  ChevronRight,
-  ChevronDown,
-  PlusCircle,
-  PlusSquare,
-} from "lucide-react";
-import { init } from "next/dist/compiled/webpack/webpack";
-
-interface Node {
-  id: string;
-  content: string;
-  children: Node[];
-  isCollapsed?: boolean;
-}
+  rootNodeState,
+  selectedNodeState,
+  editingNodeState,
+  animatingNodesState,
+  isPanningState,
+} from "../atoms";
 
 const MindMap: React.FC = () => {
-  const [rootNode, setRootNode] = useState<Node>({
-    id: "1",
-    content: "Root Node",
-    children: [],
-  });
-  const [isPanning, setIsPanning] = useState(false);
-  const [editingNode, setEditingNode] = useState<string | null>(null);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [rootNode, setRootNode] = useRecoilState(rootNodeState);
+  const [selectedNode, setSelectedNode] = useRecoilState(selectedNodeState);
+  const [editingNode, setEditingNode] = useRecoilState(editingNodeState);
+  const animatingNodes = useRecoilValue(animatingNodesState);
+  const [isPanning, setIsPanning] = useRecoilState(isPanningState);
+
   const [initialPosition, setInitialPosition] = useState<{
     x: number;
     y: number;
   } | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const transformWrapperRef = useRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const addChild = (parentId: string) => {
-    const newNode: Node = {
+    const newNode: NodeType = {
       id: Math.random().toString(36).substr(2, 9),
       content: "New Node",
       children: [],
     };
 
-    const updateNodes = (node: Node): Node => {
+    const updateNodes = (node: NodeType): NodeType => {
       if (node.id === parentId) {
         return {
           ...node,
@@ -60,13 +56,13 @@ const MindMap: React.FC = () => {
   };
 
   const addSibling = (siblingId: string) => {
-    const newNode: Node = {
+    const newNode: NodeType = {
       id: Math.random().toString(36).substr(2, 9),
       content: "New Sibling",
       children: [],
     };
 
-    const updateNodes = (node: Node): Node => {
+    const updateNodes = (node: NodeType): NodeType => {
       if (node.children.some((child) => child.id === siblingId)) {
         return { ...node, children: [...node.children, newNode] };
       }
@@ -82,7 +78,7 @@ const MindMap: React.FC = () => {
   };
 
   const updateNodeContent = (nodeId: string, newContent: string) => {
-    const updateNodes = (node: Node): Node => {
+    const updateNodes = (node: NodeType): NodeType => {
       if (node.id === nodeId) {
         return { ...node, content: newContent };
       }
@@ -96,7 +92,7 @@ const MindMap: React.FC = () => {
   };
 
   const toggleCollapse = (nodeId: string) => {
-    const updateNodes = (node: Node): Node => {
+    const updateNodes = (node: NodeType): NodeType => {
       if (node.id === nodeId) {
         return { ...node, isCollapsed: !node.isCollapsed };
       }
@@ -108,95 +104,6 @@ const MindMap: React.FC = () => {
 
     setRootNode(updateNodes(rootNode));
   };
-
-  const renderNode = (node: Node, isRoot: boolean = false) => (
-    <div
-      key={node.id}
-      className={`relative flex flex-col items-start p-2 mx-6 my-2 bg-white border-2 rounded-lg transition-all duration-300 ease-in-out
-        ${isRoot ? "root" : ""} 
-        ${
-          selectedNode === node.id
-            ? "border-green-500 shadow-lg shadow-green-200"
-            : "border-gray-300"
-        }`}
-      onClick={(e) => {
-        e.stopPropagation();
-        setSelectedNode(node.id);
-      }}
-    >
-      <div className="flex items-center min-w-[150px] min-h-[30px]">
-        {/* 콜랩스 버튼 */}
-        {node.children.length > 0 && (
-          <button
-            className="flex items-center justify-center text-gray-500 hover:text-green-500 transition-colors duration-300 z-100"
-            onClick={() => toggleCollapse(node.id)}
-          >
-            {node.isCollapsed ? (
-              <ChevronRight size={16} />
-            ) : (
-              <ChevronDown size={16} />
-            )}
-          </button>
-        )}
-        <div
-          className="mx-2 cursor-text"
-          onClick={() => setEditingNode(node.id)}
-        >
-          {editingNode === node.id ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={node.content}
-              onChange={(e) => updateNodeContent(node.id, e.target.value)}
-              onBlur={() => setEditingNode(null)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  setEditingNode(null);
-                }
-              }}
-              className="w-full text-base outline-none"
-            />
-          ) : (
-            <span>{node.content}</span>
-          )}
-        </div>
-        {selectedNode === node.id && (
-          // 자식 노드 생성 버튼
-          <button
-            className="absolute right-2 top-[22px] transform -translate-y-1/2 text-gray-500 hover:text-green-500 transition-colors duration-300 z-[100]"
-            onClick={(e) => {
-              e.stopPropagation();
-              addChild(node.id);
-            }}
-          >
-            <PlusSquare size={24} />
-          </button>
-        )}
-      </div>
-      {selectedNode === node.id && !isRoot && (
-        // 형제 노드 생성 버튼
-        <button
-          className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-gray-500 hover:text-green-500 transition-colors duration-300 z-[100]"
-          onClick={(e) => {
-            e.stopPropagation();
-            addSibling(node.id);
-          }}
-        >
-          <PlusSquare size={24} />
-        </button>
-      )}
-      {!node.isCollapsed && node.children.length > 0 && (
-        // 자식 노드 리스트
-        <div
-          className={`flex flex-col ml-2 pb-5 relative overflow-hidden transition-all duration-500 ease-in-out
-          ${node.isCollapsed ? "max-h-0" : "max-h-[1000px]"}`}
-        >
-          <div className="absolute top-0 left-0 w-px h-full bg-gray-200"></div>
-          {node.children.map((child) => renderNode(child))}
-        </div>
-      )}
-    </div>
-  );
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.code === "Space") {
@@ -279,24 +186,19 @@ const MindMap: React.FC = () => {
                   setSelectedNode(null);
                 }}
               >
-                <div className="mind-map">{renderNode(rootNode, true)}</div>
+                <Node
+                  node={rootNode}
+                  isRoot={true}
+                  onSelect={setSelectedNode}
+                  onEdit={setEditingNode}
+                  onAddChild={addChild}
+                  onAddSibling={addSibling}
+                  onUpdateContent={updateNodeContent}
+                  onToggleCollapse={toggleCollapse}
+                />
               </div>
             </TransformComponent>
-            <div className="flex items-center fixed bottom-5 right-5 z-10">
-              <button
-                className="px-3 py-1 mx-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-300"
-                onClick={() => zoomIn()}
-              >
-                +
-              </button>
-              <div className="px-3">zoom</div>
-              <button
-                className="px-3 py-1 mx-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-300"
-                onClick={() => zoomOut()}
-              >
-                -
-              </button>
-            </div>
+            <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} />
           </>
         )}
       </TransformWrapper>
